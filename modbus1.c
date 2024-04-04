@@ -33,6 +33,7 @@ void test(const char *format, ...) {
 
 
 void in_func(BYTE input[]);
+void res_func(WORD output[],WORD Reg[]);
 void test(const char *format, ...);
 
 BYTE Reg[100];
@@ -73,11 +74,47 @@ void in_func(BYTE input[]) {
     test("Address Length: %04X\n", parse.address_length.Val);
 #endif
 }
+void res_func(WORD output[],WORD Reg[]) {
+    output[0] = parse.transaction_identifier.v[1];
+    output[1] = parse.transaction_identifier.v[0];
+    output[2] = parse.protocol_identifier.v[1];
+    output[3] = parse.protocol_identifier.v[0];
+    output[4] = parse.length.v[1];
+    output[5] = parse.length.v[0] - 2;
+    output[6] = parse.unit_identifier;
+    output[7] = parse.function_code;
+    
+    WORD a = parse.start_address.Val;
+    int b = parse.address_length.Val;
+    int i;
+    BYTE byt_cnt = (BYTE)(b*2);
+
+    output[8] = byt_cnt;
+
+    for(i = 0; i < b; i++) {
+        output[i + 9] = Reg[a + i - 1];
+    }
+
+    // Printing the output in string format
+    test("Output string: ");
+    for(int i = 0; i <= 8 ; i++) {
+        test("%02X ", output[i]);
+    }
+    for(int i = 9; i < 9 + parse.address_length.Val; i++) {
+        test("%04X ", output[i]);
+    }
+    test("\n");
+}
 
 int main() {
-#ifdef testing
     BYTE input[100] = {0x00, 0x01, 0x00, 0x02, 0x00, 0x06, 0x03, 0x06, 0x00, 0x04, 0x00, 0x03};
-#endif
+    WORD Reg[100]   = {0x3A2B, 0x3c7e, 0x0065, 0x2217, 0x1123, 0x1321, 0x3A2B, 0x3c7e, 0x0065, 0x2217, 0x1123, 0x1321, 0x3A2B, 0x3c7e, 0x0065, 0x2217, 0x1123, 0x1321, 0x3A2B, 0x3c7e, 0x0065, 0x2217, 0x1123, 0x1321, 0x3A2B, 0x3c7e};
+    WORD output[100]; // Assuming output array size is 100
+    
+   
     in_func(input);
+    res_func(output,Reg);
+
+    
     return 0;
 }
