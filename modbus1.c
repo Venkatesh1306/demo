@@ -2,23 +2,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+//#include "head.h"
 
 #define INPUT_SIZE 12
-
-
 #define testing
+#define cdec
 
+#ifdef cdec
 #define BYTE unsigned char
 #define WORD unsigned short
 
-void in_func(BYTE input[]); 
-void res_func(WORD output[],WORD Reg[]);
 
 typedef union {
     WORD Val;
     BYTE v[2];
 } WORD_VAL;
-
+#endif
 
 
 #ifdef testing
@@ -36,7 +35,9 @@ void in_func(BYTE input[]);
 void res_func(WORD output[],WORD Reg[]);
 void test(const char *format, ...);
 
+
 BYTE Reg[100];
+int increment;
 
 typedef struct {
     WORD_VAL transaction_identifier;
@@ -74,47 +75,53 @@ void in_func(BYTE input[]) {
     test("Address Length: %04X\n", parse.address_length.Val);
 #endif
 }
+
 void res_func(WORD output[],WORD Reg[]) {
-    output[0] = parse.transaction_identifier.v[1];
-    output[1] = parse.transaction_identifier.v[0];
-    output[2] = parse.protocol_identifier.v[1];
-    output[3] = parse.protocol_identifier.v[0];
-    output[4] = parse.length.v[1];
-    output[5] = parse.length.v[0] - 2;
+    //output[0] = parse.transaction_identifier.v[1];
+    //output[1] = parse.transaction_identifier.v[0];
+    //output[2] = parse.protocol_identifier.v[1];
+    //output[3] = parse.protocol_identifier.v[0];
     output[6] = parse.unit_identifier;
     output[7] = parse.function_code;
+    output[8] = (BYTE)(parse.address_length.Val*2);
+    output[4] = 0x00;
+    output[5] = 0x3 + output[8];
+
     
-    WORD a = parse.start_address.Val;
-    int b = parse.address_length.Val;
-    int i;
-    BYTE byt_cnt = (BYTE)(b*2);
 
-    output[8] = byt_cnt;
-
-    for(i = 0; i < b; i++) {
-        output[i + 9] = Reg[a + i - 1];
+    for( increment = 0; increment < output[8];  increment++) {
+        output[ increment*2 + 9] = Reg[parse.start_address.Val +  increment]/0x100;
+        output[ increment*2 + 10] = Reg[parse.start_address.Val +  increment]%0x100;
     }
 
+#ifdef testing
     // Printing the output in string format
     test("Output string: ");
-    for(int i = 0; i <= 8 ; i++) {
-        test("%02X ", output[i]);
+    for(int  increment = 4;  increment <= 8 ;  increment++) {
+        test("%02X ", output[ increment]);
     }
-    for(int i = 9; i < 9 + parse.address_length.Val; i++) {
-        test("%04X ", output[i]);
+    for(int  increment = 9;  increment < 9 + output[8];  increment++) {
+        test("%02X ", output[ increment]);
     }
     test("\n");
+#endif         
 }
 
 int main() {
     BYTE input[100] = {0x00, 0x01, 0x00, 0x02, 0x00, 0x06, 0x03, 0x06, 0x00, 0x04, 0x00, 0x03};
     WORD Reg[100]   = {0x3A2B, 0x3c7e, 0x0065, 0x2217, 0x1123, 0x1321, 0x3A2B, 0x3c7e, 0x0065, 0x2217, 0x1123, 0x1321, 0x3A2B, 0x3c7e, 0x0065, 0x2217, 0x1123, 0x1321, 0x3A2B, 0x3c7e, 0x0065, 0x2217, 0x1123, 0x1321, 0x3A2B, 0x3c7e};
-    WORD output[100]; // Assuming output array size is 100
+     WORD output[100];// Assuming output array size is 100
     
    
+    
+    //while(1)
+    //{
     in_func(input);
     res_func(output,Reg);
-
+    
+    //output[99] = 1;
+    //}
     
     return 0;
 }
+
